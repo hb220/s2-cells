@@ -1,12 +1,12 @@
 // ==UserScript==
 // @id             iitc-plugin-s2-cells@vib
 // @name           IITC plugin: Show Configurable S2 Cells
-// @author         vib+	Dragonsangel+nikolawannabe
+// @author         vib+	Dragonsangel+nikolawannabe+hb220
 // @category       Layer
-// @version        0.1.11
-// @namespace      https://github.com/nikolawannabe/s2-cells
-// @updateURL      https://raw.githubusercontent.com/nikolawannabe/s2-cells/master/s2-cells.meta.js
-// @downloadURL    https://github.com/nikolawannabe/s2-cells/raw/master/s2-cells.user.js
+// @version        0.1.12
+// @namespace      https://github.com/hb220/s2-cells
+// @updateURL      https://raw.githubusercontent.com/hb220/s2-cells/master/s2-cells.meta.js
+// @downloadURL    https://github.com/hb220/s2-cells/raw/master/s2-cells.user.js
 // @description    IITC: Shows configurable S2 level cells on the map
 // @include        https://*.ingress.com/intel*
 // @include        http://*.ingress.com/intel*
@@ -30,7 +30,7 @@ function wrapper(plugin_info)
   //PLUGIN AUTHORS: writing a plugin outside of the IITC build environment? if so, delete these lines!!
   //(leaving them in place might break the 'About IITC' page or break update checks)
   plugin_info.buildName = 's2-cells';
-  plugin_info.dateTimeVersion = '20180504.121800';
+  plugin_info.dateTimeVersion = '20190106.154600';
   plugin_info.pluginId = 's2-cells';
   //END PLUGIN AUTHORS NOTE
 
@@ -42,7 +42,8 @@ function wrapper(plugin_info)
   // SET THIS TO TRUE WHILE DEBUGGING
   window.plugin.showcells.debug = false;
 
-  window.plugin.showcells.storage = { lightCell: 17, darkCell: 14, lightColor: '#f5fffa', darkColor: '#3cb371'};
+  window.plugin.showcells.defaults = { lightCell: 17, darkCell: 14, portalCell: 19, lightColor: '#b0e6ff', darkColor: '#3cb371', portalColor: '#ffc4e1' };
+  window.plugin.showcells.storage = window.plugin.showcells.defaults;
   window.plugin.showcells.storageKey = 'showcells-storage';
 
   // update the localStorage datas
@@ -65,25 +66,32 @@ function wrapper(plugin_info)
     window.plugin.showcells.loadStorage();
     var lightCell = window.plugin.showcells.storage.lightCell;
     var darkCell = window.plugin.showcells.storage.darkCell;
+    var portalCell = window.plugin.showcells.storage.portalCell;
     var lightColor = window.plugin.showcells.storage.lightColor;
     var darkColor = window.plugin.showcells.storage.darkColor;
-    if (lightCell == isNaN || darkCell == isNaN) {
+    var portalColor = window.plugin.showcells.storage.portalColor;
+    if (lightCell == isNaN || darkCell == isNaN || darkCell == isNaN) {
         window.plugin.showcells.storage.lightCell = 17;
         lightCell = 17;
         window.plugin.showcells.storage.darkCell = 14;
         darkCell = 14;
+        window.plugin.showcells.storage.portalCell = 19;
+        portalCell = 19;
         window.plugin.showcells.saveStorage();
-    } 
-    var dialogHtml = 
+    }
+    var dialogHtml =
         "<div id='cell-levels-dialog'>" +
-        "Inner Cells<div><input type='text' id='light-cell' value='" + lightCell + "'/> " + 
+        "Inner Cells<div><input type='text' id='portal-cell' value='" + portalCell + "'/> " +
+          "Color: <input type='color' id='portal-color' value='" + portalColor + "'/>" +
+          "</div>" +
+        "Medium Cells<div><input type='text' id='light-cell' value='" + lightCell + "'/> " +
           "Color: <input type='color' id='light-color' value='" + lightColor + "'/>" +
-          "</div>" + 
-        "Outer Cells<div><input type='text' id='dark-cell' value='" + darkCell + "'/> " + 
+          "</div>" +
+        "Outer Cells<div><input type='text' id='dark-cell' value='" + darkCell + "'/> " +
           "Color: <input type='color' id='dark-color' value='" + darkColor + "'/>" +
           "</div>" +
         "<div>Note that if your choices would cause too many cells to be rendered, we will try not to display them.</div>" +
-        "<div>See the <a href='https://github.com/nikolawannabe/s2-cells/blob/master/cell-guidelines.md'>Cell Guidelines</a> " +  
+        "<div>See the <a href='https://github.com/nikolawannabe/s2-cells/blob/master/cell-guidelines.md'>Cell Guidelines</a> " +
         "for tips on what these numbers can be used for.</div>"
   ;
     var d =
@@ -93,7 +101,7 @@ function wrapper(plugin_info)
         width:'auto',
         buttons:{
           'Reset to Defaults': function() {
-                window.plugin.showcells.storage = { lightCell: 17, darkCell: 14, lightColor: '#f5fffa', darkColor: '#3cb371'};
+                window.plugin.showcells.storage = window.plugin.showcells.defaults;
                 window.plugin.showcells.saveStorage();
                 window.plugin.showcells.update();
                 return;
@@ -101,23 +109,29 @@ function wrapper(plugin_info)
           'Save': function() {
                 var darkCell = parseInt($("#dark-cell").val(), 10);
                 var lightCell = parseInt($("#light-cell").val(), 10);
+                var portalCell = parseInt($("#portal-cell").val(), 10);
                 var darkColor = $("#dark-color").val();
                 var lightColor = $("#light-color").val();
+                var portalColor = $("#portal-color").val();
                 console.log("light color: " + lightColor);
                 console.log("dark color: " + darkColor);
-               
-                if (lightCell !== isNaN && darkCell !== isNaN  &&
+                console.log("portal color: " + portalColor);
+
+                if (lightCell !== isNaN && darkCell !== isNaN  && portalCell !== isNaN &&
                    lightCell >= 2 && lightCell < 21 &&
-                   darkCell >= 2 && darkCell < 21)
+                   darkCell >= 2 && darkCell < 21 &&
+                   portalCell >= 2 && portalCell < 21)
                 {
                     window.plugin.showcells.storage.darkCell = darkCell;
                     window.plugin.showcells.storage.lightCell = lightCell;
+                    window.plugin.showcells.storage.portalCell = portalCell;
                     window.plugin.showcells.storage.lightColor = lightColor;
                     window.plugin.showcells.storage.darkColor = darkColor;
-                  
+                    window.plugin.showcells.storage.portalColor = portalColor;
+
                     window.plugin.showcells.saveStorage();
                     window.plugin.showcells.update();
-                } 
+                }
                 else
                 {
                   alert("Invalid value(s). Cell levels must be numbers between 2 and 20");
@@ -126,7 +140,7 @@ function wrapper(plugin_info)
             }
         }
     });
-  
+
   };
 
   window.plugin.showcells.setup = function()
@@ -739,52 +753,56 @@ function wrapper(plugin_info)
 
     // centre cell
     var zoom = map.getZoom();
-    
+
     var darkCell = window.plugin.showcells.storage.darkCell;
     var lightCell = window.plugin.showcells.storage.lightCell;
+    var portalCell = window.plugin.showcells.storage.portalCell;
     var lightColor = window.plugin.showcells.storage.lightColor;
     var darkColor = window.plugin.showcells.storage.darkColor;
+    var portalColor = window.plugin.showcells.storage.portalColor;
     var maxzoom = 5;
-    var greaterCell = 0;
-    if (darkCell > lightCell) {
-      greaterCell = darkCell;
-    } else {
-      greaterCell = lightCell;
+
+//    var levelArray = [darkCell, lightCell, portalCell];
+//    var colorArray = [darkColor, lightColor, portalColor];
+    var levelArray = [portalCell, lightCell, darkCell];
+    var colorArray = [portalColor, lightColor, darkColor];
+
+    for (var i = 0; i<3; i++)
+    {
+      var Cell = levelArray[i];
+
+      //FIXME:  This works great with my screen resolution, but may not for others! Needs to be
+      //calculated, but I am too lazy.
+      if (Cell > 10 && Cell < 11) {
+        maxzoom  = 6;
+      }
+
+      if (Cell > 10 && Cell < 13) {
+        maxzoom  = 10;
+      }
+
+      if (Cell > 12 && Cell < 16) {
+        maxzoom  = 12;
+      }
+
+      if (Cell > 15 && Cell < 18) {
+        maxzoom  = 15;
+      }
+
+      if (Cell > 17 && Cell < 20) {
+        maxzoom  = 18;
+      }
+
+      // console.log("Set maxzoom to " + maxzoom +", greater cell is " + greaterCell + " and zoom is " + zoom + ".");
+
+      if (zoom >= maxzoom)
+      {
+        var cellS2 = S2.S2Cell.FromLatLng(map.getCenter(), Cell);
+
+        drawCellAndNeighbors(cellS2, colorArray[i]);
+      }
     }
-    
-    //FIXME:  This works great with my screen resolution, but may not for others! Needs to be
-    //calculated, but I am too lazy.
-    if (greaterCell > 10 && greaterCell < 11) {
-      maxzoom  = 6;
-    }
-   
-    if (greaterCell > 10 && greaterCell < 13) {
-      maxzoom  = 10;
-    }
-    
-    if (greaterCell > 12 && greaterCell < 16) {
-      maxzoom  = 12;
-    }
-    
-    if (greaterCell > 15 && greaterCell < 18) {
-      maxzoom  = 15;
-    }
-   
-    if (greaterCell > 17 && greaterCell < 20) {
-      maxzoom  = 18;
-      
-    }
-    console.log("Set maxzoom to " + maxzoom +", greater cell is " + greaterCell + " and zoom is " + zoom + ".");
-   
-    if (zoom >= maxzoom)
-    { 
-      var cellStop = S2.S2Cell.FromLatLng(map.getCenter(), lightCell);
-      var cellGym = S2.S2Cell.FromLatLng(map.getCenter(), darkCell);
-      
-      drawCellAndNeighbors(cellStop, lightColor);
-      drawCellAndNeighbors(cellGym, darkColor);
-    }
-    
+
     // the six cube side boundaries. we cheat by hard-coding the coords as it's simple enough
     var latLngs = [
       [45, -180],
